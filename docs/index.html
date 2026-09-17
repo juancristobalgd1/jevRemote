@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Demo de decisiones de interfaz basadas solo en texto con Jev.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.typesafe.ai; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'self'">
+  <title>jevRemote · Text-first UI decisions</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #08111f;
+      --panel: rgba(15, 29, 50, .82);
+      --line: rgba(158, 187, 224, .17);
+      --muted: #8ea4c3;
+      --text: #ecf4ff;
+      --accent: #77e3bb;
+      --accent-strong: #37c99a;
+      --danger: #ff9b9b;
+      --shadow: 0 24px 80px rgba(0, 0, 0, .28);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 14% -10%, rgba(71, 130, 255, .26), transparent 36rem),
+        radial-gradient(circle at 96% 5%, rgba(55, 201, 154, .14), transparent 32rem),
+        var(--bg);
+      font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 52px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 68px; }
+    .brand { display: flex; align-items: center; gap: 11px; color: var(--text); font-weight: 750; letter-spacing: -.02em; }
+    .mark { display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid rgba(119, 227, 187, .55); border-radius: 10px; color: var(--accent); background: rgba(119, 227, 187, .08); font-weight: 900; }
+    .brand small { color: var(--muted); font-size: 12px; font-weight: 500; letter-spacing: .02em; }
+    .badge { display: inline-flex; align-items: center; gap: 8px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 12px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent); }
+    .hero { max-width: 810px; margin-bottom: 38px; }
+    .eyebrow { margin: 0 0 13px; color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { max-width: 800px; margin: 0 0 17px; font-size: clamp(38px, 7vw, 73px); line-height: .99; letter-spacing: -.065em; }
+    .hero p { max-width: 670px; margin: 0; color: var(--muted); font-size: 17px; }
+    .hero code { color: var(--text); }
+    .layout { display: grid; grid-template-columns: minmax(0, .88fr) minmax(0, 1.12fr); gap: 18px; align-items: start; }
+    .panel { border: 1px solid var(--line); border-radius: 22px; background: linear-gradient(145deg, rgba(18, 38, 65, .9), var(--panel)); box-shadow: var(--shadow); backdrop-filter: blur(18px); }
+    .setup { padding: 22px; }
+    .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 21px 22px 16px; border-bottom: 1px solid var(--line); }
+    .panel-head h2 { margin: 0; font-size: 15px; letter-spacing: -.01em; }
+    .panel-head p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .section-label { margin: 0 0 9px; color: var(--muted); font-size: 11px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+    label { display: block; margin: 0 0 18px; }
+    input, textarea { width: 100%; border: 1px solid var(--line); border-radius: 13px; outline: none; color: var(--text); background: rgba(4, 13, 27, .5); font: inherit; transition: border-color .2s, box-shadow .2s, background .2s; }
+    input { height: 46px; padding: 0 14px; }
+    textarea { min-height: 164px; padding: 13px 14px; resize: vertical; }
+    input:focus, textarea:focus { border-color: rgba(119, 227, 187, .75); background: rgba(4, 13, 27, .72); box-shadow: 0 0 0 3px rgba(119, 227, 187, .1); }
+    ::placeholder { color: #617899; }
+    .form-actions { display: flex; align-items: center; justify-content: space-between; gap: 13px; margin-top: 21px; }
+    .privacy { max-width: 220px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.4; }
+    button { border: 0; border-radius: 12px; cursor: pointer; color: #061b19; background: var(--accent); font: 750 14px/1 inherit; transition: transform .2s, background .2s, opacity .2s; }
+    button:hover { background: #9af0d0; transform: translateY(-1px); }
+    button:disabled { cursor: wait; opacity: .55; transform: none; }
+    .primary { min-width: 142px; padding: 13px 16px; }
+    .workspace { display: grid; grid-template-columns: minmax(0, .86fr) minmax(0, 1.14fr); min-height: 530px; overflow: hidden; }
+    .screen { border-right: 1px solid var(--line); }
+    .screen-body { padding: 16px; }
+    .screen-item { display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 9px; padding: 12px 13px; border: 1px solid var(--line); border-radius: 13px; text-align: left; color: var(--text); background: rgba(8, 20, 37, .62); }
+    .screen-item:last-child { margin-bottom: 0; }
+    .screen-item:hover { border-color: rgba(119, 227, 187, .45); background: rgba(119, 227, 187, .07); }
+    .number { display: grid; flex: 0 0 25px; width: 25px; height: 25px; place-items: center; border-radius: 8px; color: var(--accent); background: rgba(119, 227, 187, .1); font-size: 11px; font-weight: 800; }
+    .item-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .duplicate { margin-left: auto; color: var(--muted); font-size: 10px; white-space: nowrap; }
+    .result { min-width: 0; }
+    .result-body { display: flex; min-height: 460px; flex-direction: column; padding: 27px 25px; }
+    .empty { display: grid; flex: 1; min-height: 380px; place-items: center; padding: 30px; color: var(--muted); text-align: center; }
+    .empty-icon { display: grid; width: 54px; height: 54px; margin: 0 auto 15px; place-items: center; border: 1px solid var(--line); border-radius: 17px; color: var(--accent); background: rgba(119, 227, 187, .06); font-size: 21px; }
+    .empty p { max-width: 255px; margin: 0; font-size: 13px; }
+    .hidden { display: none !important; }
+    .decision-kicker { margin: 0 0 8px; color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .decision { margin: 0 0 25px; font-size: clamp(29px, 4vw, 44px); line-height: 1.04; letter-spacing: -.05em; overflow-wrap: anywhere; }
+    .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 28px; }
+    .metric { padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: rgba(4, 13, 27, .34); }
+    .metric span { display: block; margin-bottom: 4px; color: var(--muted); font-size: 11px; }
+    .metric strong { font-size: 20px; letter-spacing: -.035em; }
+    .prob-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 11px; }
+    .prob-head h3 { margin: 0; font-size: 12px; }
+    .prob-head span { color: var(--muted); font-size: 11px; }
+    .probability { margin-bottom: 12px; }
+    .prob-label { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 5px; font-size: 12px; }
+    .prob-label strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .prob-label span { color: var(--muted); }
+    .track { height: 6px; overflow: hidden; border-radius: 99px; background: rgba(142, 164, 195, .14); }
+    .fill { height: 100%; border-radius: inherit; background: #6b86aa; transition: width .5s ease; }
+    .probability.selected .fill { background: linear-gradient(90deg, var(--accent-strong), var(--accent)); }
+    .notice { margin: 0 0 18px; padding: 12px 14px; border: 1px solid rgba(255, 155, 155, .25); border-radius: 12px; color: var(--danger); background: rgba(255, 155, 155, .07); font-size: 12px; }
+    .footnote { margin: 30px 0 0; color: var(--muted); font-size: 11px; text-align: center; }
+    .footnote a { color: var(--accent); }
+
+    @media (max-width: 880px) {
+      header { margin-bottom: 50px; }
+      .layout, .workspace { grid-template-columns: 1fr; }
+      .screen { border-right: 0; border-bottom: 1px solid var(--line); }
+      .result-body { min-height: 430px; }
+    }
+
+    @media (max-width: 540px) {
+      .shell { width: min(100% - 22px, 1180px); padding-top: 18px; }
+      header { align-items: flex-start; margin-bottom: 43px; }
+      .badge { display: none; }
+      h1 { font-size: 45px; }
+      .hero p { font-size: 15px; }
+      .setup, .result-body { padding: 17px; }
+      .panel-head { padding: 17px; }
+      .form-actions { align-items: stretch; flex-direction: column; }
+      .privacy { max-width: none; }
+      .primary { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand"><span class="mark">j</span><span>jevRemote <small>/ playground</small></span></div>
+      <div class="badge"><span class="dot"></span> direct TypeSafe API</div>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow">Text-first computer use</p>
+      <h1>Let Jev choose the next click.</h1>
+      <p>Simula una pantalla con etiquetas y comprueba qué decisión devuelve <code>jev-latest</code>, sin enviar imágenes ni píxeles.</p>
+    </section>
+
+    <main class="layout">
+      <section class="panel setup">
+        <form id="demo-form">
+          <p class="section-label">Conexión</p>
+          <label>
+            API key de TypeSafe
+            <input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="ts_..." required>
+          </label>
+          <label>
+            Objetivo
+            <input id="goal" type="text" value="Abrir la página de precios" required>
+          </label>
+          <label>
+            Etiquetas visibles · una por línea
+            <textarea id="labels" spellcheck="false" required>Ver productos
+Precios
+Documentación
+Contactar con ventas</textarea>
+          </label>
+          <div class="form-actions">
+            <p class="privacy">La clave solo se mantiene en esta pestaña y se envía directamente a <b>api.typesafe.ai</b>. No se guarda ni se manda a otro sitio.</p>
+            <button class="primary" id="submit" type="submit">Preguntar a Jev <span aria-hidden="true">↗</span></button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel workspace" aria-live="polite">
+        <div class="screen">
+          <div class="panel-head">
+            <div><h2>Pantalla simulada</h2><p id="screen-count">0 elementos</p></div>
+            <span class="badge">DOM text</span>
+          </div>
+          <div class="screen-body" id="screen-list"></div>
+        </div>
+        <div class="result">
+          <div class="panel-head"><div><h2>Decisión</h2><p>Una pregunta · una acción</p></div></div>
+          <div class="result-body">
+            <div class="empty" id="empty-state">
+              <div><div class="empty-icon">✦</div><p>Completa el objetivo y las etiquetas. La decisión aparecerá aquí con su confianza y latencia real.</p></div>
+            </div>
+            <div id="result-state" class="hidden">
+              <p class="decision-kicker">Jev elegiría</p>
+              <h2 class="decision" id="chosen"></h2>
+              <div class="metrics">
+                <div class="metric"><span>Confianza</span><strong id="confidence">—</strong></div>
+                <div class="metric"><span>Latencia API</span><strong id="latency">—</strong></div>
+              </div>
+              <div class="prob-head"><h3>Distribución de probabilidad</h3><span id="model">jev-latest</span></div>
+              <div id="probabilities"></div>
+            </div>
+            <div id="error-state" class="notice hidden" role="alert"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <p class="footnote">Proyecto experimental · <a href="https://docs.typesafe.ai/api" target="_blank" rel="noreferrer">API de TypeSafe</a></p>
+  </div>
+
+  <script>
+    (() => {
+      const endpoint = "https://api.typesafe.ai/v1/systemone";
+      const form = document.querySelector("#demo-form");
+      const apiKeyInput = document.querySelector("#api-key");
+      const goalInput = document.querySelector("#goal");
+      const labelsInput = document.querySelector("#labels");
+      const submit = document.querySelector("#submit");
+      const screenList = document.querySelector("#screen-list");
+      const screenCount = document.querySelector("#screen-count");
+      const emptyState = document.querySelector("#empty-state");
+      const resultState = document.querySelector("#result-state");
+      const errorState = document.querySelector("#error-state");
+      const chosen = document.querySelector("#chosen");
+      const confidence = document.querySelector("#confidence");
+      const latency = document.querySelector("#latency");
+      const model = document.querySelector("#model");
+      const probabilities = document.querySelector("#probabilities");
+
+      function uniqueOptions(labels) {
+        const used = new Set();
+        return labels.map((label) => {
+          let key = label;
+          let suffix = 2;
+          while (used.has(key)) key = label + " [" + suffix++ + "]";
+          used.add(key);
+          return { key, label };
+        });
+      }
+
+      function getOptions() {
+        const labels = labelsInput.value.split(/\r?\n/).map((label) => label.replace(/\s+/g, " ").trim()).filter(Boolean);
+        return uniqueOptions(labels);
+      }
+
+      function renderScreen(options) {
+        screenList.replaceChildren();
+        options.forEach((option, index) => {
+          const item = document.createElement("div");
+          item.className = "screen-item";
+          const number = document.createElement("span");
+          number.className = "number";
+          number.textContent = String(index + 1).padStart(2, "0");
+          const label = document.createElement("span");
+          label.className = "item-label";
+          label.textContent = option.label;
+          item.append(number, label);
+          if (option.key !== option.label) {
+            const duplicate = document.createElement("span");
+            duplicate.className = "duplicate";
+            duplicate.textContent = option.key.slice(option.label.length);
+            item.append(duplicate);
+          }
+          screenList.append(item);
+        });
+        screenCount.textContent = options.length + (options.length === 1 ? " elemento" : " elementos");
+      }
+
+      function showError(message) {
+        errorState.textContent = message;
+        errorState.classList.remove("hidden");
+        emptyState.classList.add("hidden");
+        resultState.classList.add("hidden");
+      }
+
+      function renderDecision(answer, elapsed, options) {
+        const selected = options.find((option) => option.key === answer.choice);
+        chosen.textContent = selected ? selected.label : answer.choice;
+        confidence.textContent = formatPercent(answer.confidence);
+        latency.textContent = elapsed.toFixed(1) + " ms";
+        model.textContent = answer.model || "jev-latest";
+        probabilities.replaceChildren();
+        Object.entries(answer.probabilities || {}).sort(([, a], [, b]) => b - a).forEach(([key, value]) => {
+          const row = document.createElement("div");
+          row.className = "probability" + (key === answer.choice ? " selected" : "");
+          const label = document.createElement("div");
+          label.className = "prob-label";
+          const name = document.createElement("strong");
+          name.textContent = options.find((option) => option.key === key)?.label || key;
+          const percent = document.createElement("span");
+          percent.textContent = formatPercent(value);
+          label.append(name, percent);
+          const track = document.createElement("div");
+          track.className = "track";
+          const fill = document.createElement("div");
+          fill.className = "fill";
+          fill.style.width = Math.max(0, Math.min(100, value * 100)) + "%";
+          track.append(fill);
+          row.append(label, track);
+          probabilities.append(row);
+        });
+        errorState.classList.add("hidden");
+        emptyState.classList.add("hidden");
+        resultState.classList.remove("hidden");
+      }
+
+      function formatPercent(value) {
+        return (Number(value) * 100).toFixed(1) + "%";
+      }
+
+      function responseError(response) {
+        if (response.status === 401) return "La API key fue rechazada (HTTP 401). Comprueba que sea válida.";
+        if (response.status === 429 || response.status === 529) return "TypeSafe está limitando o saturado temporalmente (HTTP " + response.status + "). Inténtalo de nuevo.";
+        return "TypeSafe respondió con HTTP " + response.status + ". Revisa la petición y vuelve a intentarlo.";
+      }
+
+      function networkError() {
+        return "La petición no llegó a TypeSafe. El navegador suele mostrar este error cuando el endpoint no permite CORS desde GitHub Pages; prueba la CLI si persiste.";
+      }
+
+      labelsInput.addEventListener("input", () => renderScreen(getOptions()));
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const apiKey = apiKeyInput.value.trim();
+        const goal = goalInput.value.trim();
+        const options = getOptions();
+        if (!apiKey || !goal || !options.length) {
+          showError("Necesitas una API key, un objetivo y al menos una etiqueta.");
+          return;
+        }
+
+        submit.disabled = true;
+        submit.textContent = "Consultando…";
+        errorState.classList.add("hidden");
+        const started = performance.now();
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              state: { goal, visible_elements: options.map((option, index) => ({ index, label: option.label })) },
+              model: "jev-latest",
+              questions: {
+                next_element: {
+                  type: "choice",
+                  instructions: "Choose the single visible label that should be selected next to advance toward this goal: " + goal,
+                  criteria: Object.fromEntries(options.map((option) => [option.key, "Visible interface label: " + option.label]))
+                }
+              }
+            })
+          });
+          const elapsed = performance.now() - started;
+          if (!response.ok) {
+            showError(responseError(response));
+            return;
+          }
+          const payload = await response.json();
+          const answer = payload && payload.answers && payload.answers.next_element;
+          if (!answer || answer.type !== "choice" || typeof answer.choice !== "string" || typeof answer.confidence !== "number") {
+            showError("La respuesta de TypeSafe no tiene el formato choice esperado.");
+            return;
+          }
+          renderDecision({ ...answer, model: payload.model }, elapsed, options);
+        } catch (error) {
+          showError(error instanceof TypeError ? networkError() : "No se pudo procesar la respuesta de TypeSafe. Vuelve a intentarlo.");
+        } finally {
+          submit.disabled = false;
+          submit.innerHTML = "Preguntar a Jev <span aria-hidden=\"true\">↗</span>";
+        }
+      });
+
+      renderScreen(getOptions());
+    })();
+  </script>
+</body>
+</html>
+
