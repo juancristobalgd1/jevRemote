@@ -15,6 +15,7 @@ export function normalizeLabel(value: string): string {
 
 export async function detectClickableElements(page: Page): Promise<DetectedElement[]> {
   return page.locator(CLICKABLE_SELECTOR).evaluateAll((elements) => {
+    elements.forEach((element) => element.removeAttribute("data-jevremote-id"));
     const visible = elements.filter((element) => {
       const htmlElement = element as HTMLElement;
       const style = getComputedStyle(htmlElement);
@@ -32,8 +33,8 @@ export async function detectClickableElements(page: Page): Promise<DetectedEleme
     return visible.flatMap((element, index) => {
       const htmlElement = element as HTMLElement;
       const label = normalizeLabel(
-        htmlElement.innerText ||
-          htmlElement.getAttribute("aria-label") ||
+        htmlElement.getAttribute("aria-label") ||
+          htmlElement.innerText ||
           htmlElement.getAttribute("title") ||
           (htmlElement as HTMLInputElement).value ||
           htmlElement.querySelector("img[alt]")?.getAttribute("alt") ||
@@ -58,4 +59,3 @@ export async function detectClickableElements(page: Page): Promise<DetectedEleme
     });
   });
 }
-

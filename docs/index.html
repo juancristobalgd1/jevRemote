@@ -332,14 +332,14 @@ Contactar con ventas</textarea>
               }
             })
           });
+          const payload = await response.json().catch(() => null);
           const elapsed = performance.now() - started;
           if (!response.ok) {
             showError(responseError(response));
             return;
           }
-          const payload = await response.json();
           const answer = payload && payload.answers && payload.answers.next_element;
-          if (!answer || answer.type !== "choice" || typeof answer.choice !== "string" || typeof answer.confidence !== "number") {
+          if (!answer || answer.type !== "choice" || typeof answer.choice !== "string" || typeof answer.confidence !== "number" || !Number.isFinite(answer.confidence) || !answer.probabilities || typeof answer.probabilities !== "object") {
             showError("La respuesta de TypeSafe no tiene el formato choice esperado.");
             return;
           }
@@ -357,4 +357,3 @@ Contactar con ventas</textarea>
   </script>
 </body>
 </html>
-
